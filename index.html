@@ -37,6 +37,11 @@
           You are a letter, folded into a glider. Point your index finger at the screen and it flies
           where you point, over the rooftops and between the chimneys.
         </p>
+        <div class="route">
+          <p class="route-label" id="home-routes-label">Route</p>
+          <div id="home-routes" class="segmented" role="radiogroup" aria-labelledby="home-routes-label"></div>
+          <p id="home-route-blurb" class="route-blurb"></p>
+        </div>
         <p class="ledger"><span>Best delivery</span><strong id="home-best">—</strong></p>
 
         <div class="buttons">
@@ -45,7 +50,7 @@
             <path class="hand" d="M15 11 C24 6 34 5 45 7 L91 7 C99 7 99 18 91 18 L56 18 C64 18 66 27 57 28 C65 29 65 37 56 37 C63 38 62 46 53 46 L41 46 C30 47 22 45 15 42 Z" />
             <path class="detail" d="M22 14 C32 15 42 20 56 18 M85 9 C83 11 83 15 85 17 M9 9 C8 22 8 32 9 44 M48 28 L57 28 M47 37 L56 37" />
           </svg>
-          <button id="btn-play" class="airmail-label" type="button">Play</button>
+          <button id="btn-play" class="airmail-label" type="button" data-autofocus>Play</button>
           <button id="btn-mouse" class="typed-link" type="button">or play with the mouse</button>
         </div>
         <p id="home-error" class="error" role="alert" hidden></p>
@@ -97,6 +102,7 @@
           <div><dt>Best</dt><dd id="pause-best">0</dd></div>
           <div><dt>Leg</dt><dd id="pause-leg">—</dd></div>
           <div><dt>Controls</dt><dd id="pause-mode">—</dd></div>
+          <div><dt>Route</dt><dd id="pause-route">—</dd></div>
         </dl>
         <div class="buttons">
           <button id="btn-resume" class="airmail-label" type="button">Resume</button>

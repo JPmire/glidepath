@@ -59,7 +59,7 @@ const settingsView = mountSettings($('settings-body'), settings, applySettings, 
   },
 });
 
-const menus = new Menus(engine, {
+const menus = new Menus(engine, settings, {
   play: (kind) => void play(kind),
   home: () => {
     source = 'none';

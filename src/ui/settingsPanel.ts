@@ -1,3 +1,4 @@
+import { DEFAULT_DIFFICULTY, type DifficultyId } from '../game/difficulty';
 import type { ControlMode } from '../game/gameEngine';
 
 export interface Settings {
@@ -6,6 +7,8 @@ export interface Settings {
   beta: number;
   rayGain: number;
   mode: ControlMode;
+  /** Chosen on the home screen, not in the sheet. */
+  difficulty: DifficultyId;
   reticle: boolean;
   preview: boolean;
   sound: boolean;
@@ -15,7 +18,7 @@ export interface Settings {
 
 const STORAGE_KEY = 'glidepath.settings.v2';
 export const DEFAULT_SETTINGS: Settings = {
-  omegaN: 20, minCutoff: 1.0, beta: 0.015, rayGain: 0.5, mode: 'FOLLOW', reticle: true, preview: true, sound: true, music: true, volume: 0.7,
+  omegaN: 20, minCutoff: 1.0, beta: 0.015, rayGain: 0.5, mode: 'FOLLOW', difficulty: DEFAULT_DIFFICULTY, reticle: true, preview: true, sound: true, music: true, volume: 0.7,
 };
 
 type SliderKey = 'omegaN' | 'minCutoff' | 'beta' | 'rayGain' | 'volume';
@@ -41,7 +44,7 @@ export function loadSettings(): Settings {
   }
 }
 
-function save(s: Settings): void {
+export function saveSettings(s: Settings): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
   } catch {
@@ -84,7 +87,7 @@ export function mountSettings(
 ): SettingsView {
   root.innerHTML = '';
   const commit = () => {
-    save(settings);
+    saveSettings(settings);
     onChange(settings);
   };
   const inputs = new Map<SliderKey, HTMLInputElement>();
@@ -147,7 +150,7 @@ export function mountSettings(
   check(display, 'preview', 'Show camera preview');
   const reset = el('div', { className: 'actions' });
   reset.append(button('Reset all settings', '', () => {
-    Object.assign(settings, DEFAULT_SETTINGS);
+    Object.assign(settings, DEFAULT_SETTINGS, { difficulty: settings.difficulty }); // keep the route
     sync();
     commit();
   }));

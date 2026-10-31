@@ -1,3 +1,5 @@
+import { DEFAULT_DIFFICULTY, type DifficultyId } from '../game/difficulty';
+
 export type ScreenName = 'home' | 'howto' | 'settings' | 'pause';
 
 const NAMES: readonly ScreenName[] = ['home', 'howto', 'settings', 'pause'];
@@ -42,24 +44,32 @@ export class Screens {
     for (const n of NAMES) document.getElementById(n)!.hidden = n !== name;
     this.veil.hidden = name === null || name === 'home';
     (document.activeElement as HTMLElement | null)?.blur();
-    if (name) document.getElementById(name)!.querySelector<HTMLElement>('button')?.focus({ preventScroll: true });
+    const screen = name ? document.getElementById(name)! : null;
+    (screen?.querySelector<HTMLElement>('[data-autofocus]') ?? screen?.querySelector<HTMLElement>('button'))?.focus({ preventScroll: true });
     this.onChange(name);
   }
 }
 
-const BEST_KEY = 'glidepath.best.v1';
+const BEST_KEY = 'glidepath.best.v2';
+const LEGACY_BEST_KEY = 'glidepath.best.v1'; // one best for everything, from before routes
 
-export function loadBest(): number {
+/** Best delivery per route. A pre-route best counts as an Airmail best. */
+export type Bests = Partial<Record<DifficultyId, number>>;
+
+export function loadBests(): Bests {
   try {
-    return Number(localStorage.getItem(BEST_KEY)) || 0;
+    const raw = localStorage.getItem(BEST_KEY);
+    if (raw) return JSON.parse(raw) as Bests;
+    const legacy = Number(localStorage.getItem(LEGACY_BEST_KEY)) || 0;
+    return legacy > 0 ? { [DEFAULT_DIFFICULTY]: legacy } : {};
   } catch {
-    return 0;
+    return {};
   }
 }
 
-export function saveBest(best: number): void {
+export function saveBests(bests: Bests): void {
   try {
-    localStorage.setItem(BEST_KEY, String(best));
+    localStorage.setItem(BEST_KEY, JSON.stringify(bests));
   } catch {
     /* storage unavailable */
   }

@@ -75,6 +75,33 @@
   width: 66px;
 }
 
+/* Route picker: four postal classes as a segmented strip, the chosen one's terms typed below. */
+.route {
+  margin: 0 0 22px;
+}
+
+.route-label {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--red);
+}
+
+.route .segmented button {
+  padding: 8px 6px;
+  font-size: 14px;
+  letter-spacing: 0.06em;
+}
+
+.route-blurb {
+  margin: 8px 0 0;
+  min-height: 1.4em;
+  font-size: 14px;
+  font-style: italic;
+}
+
 /* Secondary navigation: typed index-card tabs. */
 .menu-row {
   display: flex;

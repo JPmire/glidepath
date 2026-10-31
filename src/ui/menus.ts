@@ -1,9 +1,10 @@
 import { CANVAS_HEIGHT } from '../game/constants';
+import { DIFFICULTIES, DIFFICULTY_ORDER, difficultyFor, type DifficultyId } from '../game/difficulty';
 import type { GameEngine } from '../game/gameEngine';
 import { legForScore } from '../game/gameRules';
 import { legArt } from './art/legs';
-import { loadBest, saveBest, Screens, type ScreenName } from './screens';
-import { MODE_LABEL } from './settingsPanel';
+import { loadBests, saveBests, Screens, type ScreenName } from './screens';
+import { MODE_LABEL, saveSettings, type Settings } from './settingsPanel';
 
 export interface MenuHooks {
   play(kind: 'camera' | 'mouse'): void;
@@ -19,10 +20,12 @@ const $ = (id: string) => document.getElementById(id)!;
 /** The flow around the game: home → play → pause menu → settings / home, and the best score. */
 export class Menus {
   private readonly screens = new Screens($('veil'));
-  private savedBest: number;
+  private readonly bests = loadBests();
+  private readonly routeButtons = new Map<DifficultyId, HTMLButtonElement>();
 
-  constructor(private readonly engine: GameEngine, private readonly hooks: MenuHooks) {
-    this.savedBest = engine.best = loadBest();
+  constructor(private readonly engine: GameEngine, private readonly settings: Settings, private readonly hooks: MenuHooks) {
+    engine.difficulty = difficultyFor(settings.difficulty);
+    this.mountRoutes();
     this.screens.onChange = (s) => this.changed(s);
     $('btn-play').addEventListener('click', () => hooks.play('camera'));
     $('btn-mouse').addEventListener('click', () => hooks.play('mouse'));
@@ -54,9 +57,7 @@ export class Menus {
     this.engine.setState('READY');
     this.engine.glider.y = CANVAS_HEIGHT / 2 - 40;
     this.engine.glider.vy = 0;
-    const best = $('home-best');
-    best.textContent = this.savedBest > 0 ? `${this.savedBest} ${this.savedBest === 1 ? 'gate' : 'gates'}` : 'not yet posted';
-    best.classList.toggle('empty', this.savedBest === 0);
+    this.showRoute();
     this.screens.reset('home');
   }
 
@@ -69,6 +70,7 @@ export class Menus {
     const leg = legForScore(score);
     $('pause-leg').textContent = `${leg + 1} · ${legArt(leg).name}`;
     $('pause-mode').textContent = MODE_LABEL[mode];
+    $('pause-route').textContent = this.engine.difficulty.name;
     $('btn-resume').textContent = state === 'PAUSED' ? 'Resume' : 'Back to the game';
     this.screens.reset('pause');
   }
@@ -79,11 +81,42 @@ export class Menus {
     else if (this.screens.current !== 'home') this.screens.back();
   }
 
-  /** Persist a new best as soon as a run sets it. */
+  /** Persist a new best (for the route being flown) as soon as a run sets it. */
   recordBest(): void {
-    if (this.engine.best <= this.savedBest) return;
-    this.savedBest = this.engine.best;
-    saveBest(this.savedBest);
+    const id = this.engine.difficulty.id;
+    if (this.engine.best <= (this.bests[id] ?? 0)) return;
+    this.bests[id] = this.engine.best;
+    saveBests(this.bests);
+  }
+
+  /** The route picker on the home screen: one radio per route, with its blurb below. */
+  private mountRoutes(): void {
+    const group = $('home-routes');
+    for (const id of DIFFICULTY_ORDER) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = DIFFICULTIES[id].name;
+      b.setAttribute('role', 'radio');
+      b.addEventListener('click', () => {
+        this.engine.difficulty = DIFFICULTIES[id];
+        this.settings.difficulty = id;
+        saveSettings(this.settings);
+        this.showRoute();
+      });
+      this.routeButtons.set(id, b);
+      group.append(b);
+    }
+  }
+
+  /** Reflect the engine's route: checked radio, blurb, and that route's best. */
+  private showRoute(): void {
+    const d = this.engine.difficulty;
+    for (const [id, b] of this.routeButtons) b.setAttribute('aria-checked', String(id === d.id));
+    $('home-route-blurb').textContent = d.blurb;
+    const n = (this.engine.best = this.bests[d.id] ?? 0);
+    const best = $('home-best');
+    best.textContent = n > 0 ? `${n} ${n === 1 ? 'gate' : 'gates'}` : 'not yet posted';
+    best.classList.toggle('empty', n === 0);
   }
 
   private resume(): void {
