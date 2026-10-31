@@ -13,6 +13,7 @@ export const GLIDER_X = 280;
 
 export const GRAVITY = 1400; // px/s², classic flap mode
 export const FLAP_VY = -460; // px/s
+export const FLAP_LAUNCH_Y = 300; // classic mode starts every run airborne here, never on the street
 
 export const GATE_SPEED = 280; // px/s
 export const GATE_SPEED_STEP = 8; // per 5 points
@@ -27,5 +28,6 @@ export const GATE_MAX_SHIFT = 260; // max gap-centre change between consecutive 
 
 export const READY_HOLD_SEC = 0.8; // show a steering hand this long to launch
 export const RESUME_HOLD_SEC = 0.6; // after a pause, steer this long to resume
+export const RESUME_COUNTDOWN_SEC = 1.2; // after leaving the pause menu, the world waits this long
 export const GAME_OVER_COOLDOWN_SEC = 0.9;
 export const MAX_DT = 0.05;

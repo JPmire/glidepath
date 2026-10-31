@@ -6,28 +6,25 @@ import { setArtScale } from './ui/art/paper';
 import { CalibrationWizard, clearCalibration, loadCalibration } from './ui/calibrationOverlay';
 import { HudOverlay } from './ui/hudOverlay';
 import { bindKeys, fitCanvas } from './ui/layout';
+import { Menus } from './ui/menus';
 import { Renderer } from './ui/renderer';
 import { loadSettings, mountSettings, type Settings } from './ui/settingsPanel';
 import { drawStateCard } from './ui/stateCards';
-import { CameraManager, describeCameraError, type VisionFrame } from './vision/cameraManager';
-import { GestureInterpreter } from './vision/gestureInterpreter';
-import type { HandResult } from './vision/types';
+import { describeCameraError } from './vision/cameraManager';
+import { VisionInput } from './vision/visionInput';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const canvas = $<HTMLCanvasElement>('game');
 const ctx = canvas.getContext('2d', { alpha: false })!;
 
 const engine = new GameEngine();
-const gestures = new GestureInterpreter(H - GROUND_HEIGHT);
+const vision = new VisionInput(H - GROUND_HEIGHT);
+const gestures = vision.gestures;
 const renderer = new Renderer(ctx);
 const hud = new HudOverlay($('pip'), $('pill'), $('stats'));
 
+/** 'none' while on the home screen. */
 let source: 'none' | 'camera' | 'mouse' = 'none';
-let camera: CameraManager | null = null;
-let lastHand: HandResult | null = null;
-let lastVision: VisionFrame | null = null;
-let lastVisionTs = 0;
-let noHandSince = performance.now();
 let pendingFlap = false;
 let mouseY = H / 2;
 
@@ -39,6 +36,7 @@ function applySettings(s: Settings): void {
   engine.physics.omegaN = s.omegaN;
   engine.mode = s.mode;
   gestures.setTuning({ minCutoff: s.minCutoff, beta: s.beta, rayGain: s.rayGain });
+  $('pip').hidden = source !== 'camera' || !s.preview;
 }
 applySettings(settings);
 
@@ -51,19 +49,24 @@ const wizard = new CalibrationWizard((cal) => {
   engine.setState('READY');
 });
 
-function recalibrate(): void {
-  if (source !== 'camera') return;
-  wizard.reset();
-  engine.setState('CALIBRATING');
-}
-
-const syncSettings = mountSettings($('settings-body'), settings, applySettings, {
-  recalibrate,
+const settingsView = mountSettings($('settings-body'), settings, applySettings, {
+  recalibrate: () => recalibrate(),
   resetCalibration: () => {
     clearCalibration();
     calibrated = null;
     gestures.setCalibration(null);
+    settingsView.setCalibration(false, vision.on);
   },
+});
+
+const menus = new Menus(engine, {
+  play: (kind) => void play(kind),
+  home: () => {
+    source = 'none';
+    $('hud').hidden = true;
+  },
+  calibrationShown: () => settingsView.setCalibration(calibrated !== null, vision.on),
+  inGame: () => source !== 'none',
 });
 
 // ---- Layout: fit 16:9 into the window, back the canvas at devicePixelRatio ----
@@ -73,58 +76,51 @@ fitCanvas(canvas, W, H, (s) => {
   setArtScale(s); // halftones and cached art are rendered at true device resolution
 });
 
-// ---- Vision ----
-function onVision(f: VisionFrame): void {
-  const dtSec = lastVisionTs ? Math.min((f.timestampMs - lastVisionTs) / 1000, 0.1) : 1 / 30;
-  lastVisionTs = f.timestampMs;
-  lastVision = f;
-  lastHand = f.hand;
-  const snap = gestures.update(f.hand, f.timestampMs);
-  if (snap.handPresent) noHandSince = performance.now();
+// ---- Vision, and the camera / mouse / menu flow ----
+vision.onSnapshot = (snap, dtSec) => {
+  if (menus.open) return;
   if (engine.state === 'CALIBRATING') wizard.onSample(snap, dtSec);
   else if (snap.flapStart) pendingFlap = true;
-}
+};
 
-async function startCamera(): Promise<void> {
-  audio.unlock();
-  const btn = $<HTMLButtonElement>('btn-camera');
-  const err = $('intro-error');
-  btn.disabled = true;
-  btn.textContent = 'Starting camera…';
-  err.hidden = true;
+async function ensureCamera(): Promise<boolean> {
+  if (vision.on) return true;
+  const [btn, err] = [$<HTMLButtonElement>('btn-play'), $('home-error')];
+  [btn.disabled, btn.textContent, err.hidden] = [true, 'Starting camera…', true];
   try {
-    camera ??= new CameraManager();
-    camera.onFrame = onVision;
-    camera.onError = (m) => console.error('[vision]', m);
-    await camera.start();
-    source = 'camera';
-    enterGame();
-    if (calibrated) engine.setState('READY');
-    else recalibrate();
+    await vision.ensure();
+    return true;
   } catch (e) {
     err.textContent = describeCameraError(e);
     err.hidden = false;
-    btn.disabled = false;
-    btn.textContent = 'Try again';
+    menus.home();
+    return false;
+  } finally {
+    [btn.disabled, btn.textContent] = [false, 'Play'];
   }
 }
 
-function startMouse(): void {
+async function play(kind: 'camera' | 'mouse', calibrate = false): Promise<void> {
   audio.unlock();
-  source = 'mouse';
-  enterGame();
-  $('pip').hidden = true;
-  engine.setState('READY');
-}
-
-function enterGame(): void {
-  $('intro').hidden = true;
+  if (kind === 'camera' && !(await ensureCamera())) return;
+  source = kind;
   $('hud').hidden = false;
-  $('settings').hidden = false;
+  applySettings(settings);
+  menus.enterGame();
+  if (kind === 'camera' && (calibrate || !calibrated)) startCalibration();
+  else engine.setState('READY');
 }
 
-$('btn-camera').addEventListener('click', () => void startCamera());
-$('btn-mouse').addEventListener('click', startMouse);
+function startCalibration(): void {
+  wizard.reset();
+  engine.setState('CALIBRATING');
+}
+
+function recalibrate(): void {
+  if (source !== 'camera') return void play('camera', true);
+  menus.enterGame();
+  startCalibration();
+}
 
 // ---- Keyboard / mouse ----
 function primaryAction(): void {
@@ -134,15 +130,18 @@ function primaryAction(): void {
 
 function updateSettings(change: Partial<Settings>): void {
   Object.assign(settings, change);
-  syncSettings(settings);
+  settingsView.sync(settings);
   applySettings(settings);
 }
 
-bindKeys(() => source !== 'none', {
+bindKeys({
+  menuOpen: () => menus.open,
+  inGame: () => source !== 'none',
+  back: () => menus.back(),
   space: () => (engine.state === 'CALIBRATING' ? wizard.captureNow() : primaryAction()),
-  escape: () => {
-    if (engine.state === 'CALIBRATING') engine.setState('READY'); // skip: keep the previous / default mapping
-  },
+  // During calibration Esc skips it (keeping the previous / default mapping); otherwise it pauses.
+  escape: () => (engine.state === 'CALIBRATING' ? engine.setState('READY') : menus.pause()),
+  pause: () => menus.pause(),
   recalibrate,
   toggleMode: () => updateSettings({ mode: settings.mode === 'FOLLOW' ? 'FLAP' : 'FOLLOW' }),
   toggleSound: () => updateSettings({ sound: !(settings.sound || settings.music), music: !(settings.sound || settings.music) }),
@@ -153,7 +152,7 @@ canvas.addEventListener('pointermove', (e) => {
 });
 canvas.addEventListener('pointerdown', () => {
   audio.unlock();
-  if (source !== 'none') primaryAction();
+  if (source !== 'none' && !menus.open) primaryAction();
 });
 
 // ---- 120 Hz render loop (physics decoupled from the camera frame rate) ----
@@ -163,35 +162,37 @@ function buildInput(): ControlInput {
   const flap = pendingFlap;
   pendingFlap = false;
   if (source === 'mouse') return { targetY: mouseY, steering: false, pause: false, flap, handPresent: true };
-  const s = gestures.snapshot;
+  const s = vision.snapshot;
   return { targetY: s.targetY, steering: s.handPresent && s.posture === 'STEER', pause: s.pauseHeld, flap, handPresent: s.handPresent };
 }
 
 function frame(now: number): void {
   const dt = Math.min((now - last) / 1000, MAX_DT);
   last = now;
-  engine.update(dt, buildInput());
+  // Menus freeze the game: nothing launches, restarts or calibrates behind them.
+  if (menus.open) pendingFlap = false;
+  else engine.update(dt, buildInput());
+  menus.recordBest();
   audio.update(engine, wizard.index);
 
   ctx.setTransform(scale, 0, 0, scale, 0, 0);
-  renderer.draw(engine, dt, settings.reticle && source === 'camera');
+  renderer.draw(engine, dt, settings.reticle && source === 'camera' && !menus.open);
   if (engine.state === 'CALIBRATING' && source === 'camera') wizard.draw(ctx, dt);
-  drawStateCard(ctx, engine, source === 'mouse', renderer.route.points);
+  if (!menus.open) drawStateCard(ctx, engine, source === 'mouse', renderer.route.points);
   renderer.finish();
 
   if (source === 'camera') {
-    hud.draw(camera?.video ?? null, lastHand, calibrated, gestures.snapshot.feature);
-    const snap = gestures.snapshot;
-    hud.setPill(!snap.handPresent && now - noHandSince > 3000 ? 'NO HAND' : HudOverlay.pillFor(snap));
+    if (settings.preview) hud.draw(vision.camera?.video ?? null, vision.lastHand, calibrated, vision.snapshot.feature);
+    hud.setPill(vision.handLost(now) ? 'NO HAND' : HudOverlay.pillFor(vision.snapshot));
   } else if (source === 'mouse') {
     hud.setPill('MOUSE');
   }
 
   hud.report(dt, () => ({
-    cameraFps: camera?.cameraFps ?? 0,
-    inferenceMs: lastVision?.inferenceMs ?? 0,
-    latencyMs: lastVision?.latencyMs ?? 0,
-    delegate: source === 'mouse' ? 'mouse' : (camera?.delegate ?? '—'),
+    cameraFps: vision.camera?.cameraFps ?? 0,
+    inferenceMs: vision.lastFrame?.inferenceMs ?? 0,
+    latencyMs: vision.lastFrame?.latencyMs ?? 0,
+    delegate: source === 'mouse' ? 'mouse' : (vision.camera?.delegate ?? '—'),
   }));
   requestAnimationFrame(frame);
 }

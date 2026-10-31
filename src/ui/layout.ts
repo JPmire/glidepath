@@ -14,24 +14,34 @@ export function fitCanvas(canvas: HTMLCanvasElement, w: number, h: number, onSca
 }
 
 export interface KeyActions {
+  /** A menu screen is open: only Esc (back) is ours, the rest drive its buttons natively. */
+  menuOpen(): boolean;
+  inGame(): boolean;
+  back(): void;
   space(): void;
   escape(): void;
+  pause(): void;
   recalibrate(): void;
   toggleMode(): void;
   toggleSound(): void;
 }
 
-/** Global shortcuts: Space, Esc, C(alibrate), M(ode), S(ound). Ignored while using the tuning tag. */
-export function bindKeys(enabled: () => boolean, actions: KeyActions, onAnyKey: () => void): void {
+/** Global shortcuts: Space, Esc, P(ause), C(alibrate), M(ode), S(ound). */
+export function bindKeys(actions: KeyActions, onAnyKey: () => void): void {
   window.addEventListener('keydown', (e) => {
     onAnyKey();
-    if (!enabled() || (e.target as HTMLElement).closest('#settings')) return;
+    const key = e.key.toLowerCase();
+    if (actions.menuOpen()) {
+      if (key === 'escape') actions.back();
+      return;
+    }
+    if (!actions.inGame()) return;
     if (e.code === 'Space') {
       e.preventDefault();
       return actions.space();
     }
-    const key = e.key.toLowerCase();
     if (key === 'escape') actions.escape();
+    else if (key === 'p') actions.pause();
     else if (key === 'c') actions.recalibrate();
     else if (key === 'm') actions.toggleMode();
     else if (key === 's') actions.toggleSound();

@@ -4,65 +4,114 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Glidepath</title>
+    <meta name="description" content="Steer a paper airmail glider by pointing at your webcam." />
+    <meta name="theme-color" content="#2a2824" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
     <link rel="stylesheet" href="/src/styles.css" />
+    <link rel="stylesheet" href="/src/screens.css" />
   </head>
   <body>
     <main id="stage">
-      <canvas id="game" aria-label="Glidepath game canvas"></canvas>
+      <div id="frame">
+        <canvas id="game" aria-label="Glidepath game canvas"></canvas>
+        <button id="btn-pause" class="stamp-button" type="button" aria-label="Pause (Esc)" title="Pause (Esc)" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" /><rect x="14" y="5" width="4" height="14" /></svg>
+        </button>
+        <div id="veil" hidden></div>
+      </div>
 
-      <section id="intro" class="letter" aria-labelledby="intro-title">
+      <!-- Home -->
+      <section id="home" class="letter screen" aria-labelledby="home-title">
         <div class="corner-stamp" aria-hidden="true"><span>PAR<br />AVION</span></div>
         <header class="masthead">
-          <svg class="manicule" viewBox="0 0 100 50" aria-hidden="true">
-            <path class="cuff" d="M3 6 L15 9 L15 44 L3 47 C1 34 1 19 3 6 Z" />
-            <path class="hand" d="M15 11 C24 6 34 5 45 7 L91 7 C99 7 99 18 91 18 L56 18 C64 18 66 27 57 28 C65 29 65 37 56 37 C63 38 62 46 53 46 L41 46 C30 47 22 45 15 42 Z" />
-            <path class="detail" d="M22 14 C32 15 42 20 56 18 M85 9 C83 11 83 15 85 17 M9 9 C8 22 8 32 9 44 M48 28 L57 28 M47 37 L56 37" />
-          </svg>
-          <h1 id="intro-title">Glidepath</h1>
+          <img class="logo" src="/favicon.svg" alt="" width="96" height="96" />
+          <div>
+            <h1 id="home-title">Glidepath</h1>
+            <p class="subtitle">Airmail, steered by hand</p>
+          </div>
         </header>
         <p class="lede">
           You are a letter, folded into a glider. Point your index finger at the screen and it flies
           where you point, over the rooftops and between the chimneys.
         </p>
-
-        <h2>Before posting</h2>
-        <ul class="checklist">
-          <li>
-            <span class="box" aria-hidden="true"></span>
-            <p><strong>Turn off Reactions.</strong> Once the camera is on, open the green camera menu in the
-            menu bar and switch <em>Reactions</em> off, or a thumbs-up sets off fireworks and confuses tracking.</p>
-          </li>
-          <li>
-            <span class="box" aria-hidden="true"></span>
-            <p><strong>Turn off Center Stage, Portrait and Studio Light</strong> in the same menu. Auto-framing breaks calibration.</p>
-          </li>
-          <li>
-            <span class="box" aria-hidden="true"></span>
-            <p><strong>Sit 30–50 cm from the camera</strong> in good light, and keep your hand large in the frame.</p>
-          </li>
-          <li>
-            <span class="box" aria-hidden="true"></span>
-            <p><strong>Show an open palm to hold</strong> the letter any time, and point again to resume.</p>
-          </li>
-        </ul>
+        <p class="ledger"><span>Best delivery</span><strong id="home-best">—</strong></p>
 
         <div class="buttons">
-          <button id="btn-camera" class="airmail-label" type="button">Enable camera</button>
+          <svg class="manicule" viewBox="0 0 100 50" aria-hidden="true">
+            <path class="cuff" d="M3 6 L15 9 L15 44 L3 47 C1 34 1 19 3 6 Z" />
+            <path class="hand" d="M15 11 C24 6 34 5 45 7 L91 7 C99 7 99 18 91 18 L56 18 C64 18 66 27 57 28 C65 29 65 37 56 37 C63 38 62 46 53 46 L41 46 C30 47 22 45 15 42 Z" />
+            <path class="detail" d="M22 14 C32 15 42 20 56 18 M85 9 C83 11 83 15 85 17 M9 9 C8 22 8 32 9 44 M48 28 L57 28 M47 37 L56 37" />
+          </svg>
+          <button id="btn-play" class="airmail-label" type="button">Play</button>
           <button id="btn-mouse" class="typed-link" type="button">or play with the mouse</button>
         </div>
-        <p id="intro-error" class="error" role="alert" hidden></p>
+        <p id="home-error" class="error" role="alert" hidden></p>
+        <nav class="menu-row" aria-label="More">
+          <button class="file-tab" type="button" data-open="settings">Settings</button>
+          <button class="file-tab" type="button" data-open="howto">How to play</button>
+        </nav>
+      </section>
+
+      <!-- How to play -->
+      <section id="howto" class="letter screen" aria-labelledby="howto-title" hidden>
+        <h1 id="howto-title" class="sheet-title">How to play</h1>
+        <h2>Flying</h2>
+        <dl class="gestures">
+          <dt>Point</dt><dd>Aim your index finger at the screen. The glider climbs and dives to where you point; only height matters.</dd>
+          <dt>Pinch</dt><dd>In <em>pinch to flap</em> mode, touch your thumb to your index finger to flap instead.</dd>
+          <dt>Open palm</dt><dd>Show an open palm to hold the letter. Point again to resume.</dd>
+          <dt>Mouse</dt><dd>Move to steer. Click to post (and to flap in pinch mode).</dd>
+        </dl>
+        <h2>Before posting</h2>
+        <ul class="checklist">
+          <li><span class="box" aria-hidden="true"></span>
+            <p><strong>Turn off Reactions.</strong> Once the camera is on, open the green camera menu in the
+            menu bar and switch <em>Reactions</em> off, or a thumbs-up sets off fireworks and confuses tracking.</p></li>
+          <li><span class="box" aria-hidden="true"></span>
+            <p><strong>Turn off Center Stage, Portrait and Studio Light</strong> in the same menu. Auto-framing breaks calibration.</p></li>
+          <li><span class="box" aria-hidden="true"></span>
+            <p><strong>Sit 30–50 cm from the camera</strong> in good light, and keep your hand large in the frame.</p></li>
+        </ul>
+        <h2>Keys</h2>
+        <p class="keys"><kbd>Space</kbd> post / flap · <kbd>Esc</kbd> pause · <kbd>C</kbd> recalibrate · <kbd>M</kbd> switch mode · <kbd>S</kbd> sound</p>
+        <div class="buttons"><button class="typed-link" type="button" data-back>Back</button></div>
+      </section>
+
+      <!-- Settings -->
+      <section id="settings" class="letter screen sheet" aria-labelledby="settings-title" hidden>
+        <h1 id="settings-title" class="sheet-title">Settings</h1>
+        <div id="settings-body"></div>
+        <p id="stats" class="stats"></p>
+        <div class="buttons"><button class="airmail-label small" type="button" data-back>Done</button></div>
+      </section>
+
+      <!-- Pause -->
+      <section id="pause" class="letter screen" aria-labelledby="pause-title" hidden>
+        <div class="corner-stamp held" aria-hidden="true"><span>HELD</span></div>
+        <h1 id="pause-title" class="sheet-title">Held at sorting</h1>
+        <dl class="ledger-grid">
+          <div><dt>Gates</dt><dd id="pause-score">0</dd></div>
+          <div><dt>Best</dt><dd id="pause-best">0</dd></div>
+          <div><dt>Leg</dt><dd id="pause-leg">—</dd></div>
+          <div><dt>Controls</dt><dd id="pause-mode">—</dd></div>
+        </dl>
+        <div class="buttons">
+          <button id="btn-resume" class="airmail-label" type="button">Resume</button>
+          <button id="btn-restart" class="typed-link" type="button">Start over</button>
+        </div>
+        <nav class="menu-row" aria-label="More">
+          <button class="file-tab" type="button" data-open="settings">Settings</button>
+          <button id="btn-home" class="file-tab" type="button">Return home</button>
+        </nav>
       </section>
 
       <aside id="hud" hidden>
         <canvas id="pip" width="264" height="178" aria-label="Mirrored webcam preview with hand skeleton"></canvas>
         <span id="pill" class="rubber-stamp" role="status">CAMERA OFF</span>
       </aside>
-
-      <details id="settings" class="tag" hidden>
-        <summary>Tuning</summary>
-        <div id="settings-body"></div>
-        <p id="stats" class="stats"></p>
-      </details>
     </main>
     <script type="module" src="/src/main.ts"></script>
   </body>

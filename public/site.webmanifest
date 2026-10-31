@@ -1,0 +1,15 @@
+{
+  "name": "Glidepath",
+  "short_name": "Glidepath",
+  "description": "Steer a paper airmail glider by pointing at your webcam.",
+  "start_url": ".",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#2a2824",
+  "theme_color": "#d8343f",
+  "icons": [
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}

@@ -1,11 +1,11 @@
 import * as C from './constants';
-import { circleIntersectsRect, gapForScore, speedForScore } from './gameRules';
+import { gapForScore, hitsGate, nextGapY, speedForScore } from './gameRules';
 import { stepClassic, stepFollow, type GliderBody } from './springDamperPhysics';
-
-export { circleIntersectsRect, gapForScore, speedForScore };
+export { circleIntersectsRect, gapForScore, speedForScore } from './gameRules';
 
 export type GameState = 'CALIBRATING' | 'READY' | 'PLAYING' | 'PAUSED' | 'GAME_OVER';
-export type PauseReason = 'PALM' | 'NO_HAND';
+/** PALM / NO_HAND resume by gesture; MENU waits for the pause menu; RESUMING counts down to play. */
+export type PauseReason = 'PALM' | 'NO_HAND' | 'MENU' | 'RESUMING';
 export type ControlMode = 'FOLLOW' | 'FLAP';
 
 export interface ControlInput {
@@ -31,7 +31,6 @@ export interface Gate {
 }
 
 const NO_HAND_GRACE_SEC = 0.5;
-const PLAY_TOP = 0;
 const PLAY_BOTTOM = C.CANVAS_HEIGHT - C.GROUND_HEIGHT;
 
 export class GameEngine {
@@ -52,6 +51,7 @@ export class GameEngine {
   private noHandTime = 0;
   private lastGapY = C.CANVAS_HEIGHT / 2;
   private nextGateId = 1;
+  private hovering = false;
 
   constructor(private readonly rng: () => number = Math.random) {}
 
@@ -77,8 +77,20 @@ export class GameEngine {
     this.spawnTimer = C.GATE_SPAWN_MS / 1000; // first gate spawns on the next tick
     this.noHandTime = 0;
     this.glider.vy = 0;
+    // A flap run ends on the street; the next one starts mid-air and hovers until the first flap.
+    if ((this.hovering = this.mode === 'FLAP')) this.glider.y = C.FLAP_LAUNCH_Y;
     this.lastGapY = this.glider.y;
     this.setState('PLAYING');
+  }
+
+  /** Open the pause menu: freezes a run (or a gesture hold) until `resume()`. */
+  hold(): void {
+    if (this.state === 'PLAYING' || this.state === 'PAUSED') this.pause('MENU');
+  }
+
+  /** Leave the pause menu: the world restarts after a short countdown. */
+  resume(): void {
+    if (this.state === 'PAUSED') this.pause('RESUMING');
   }
 
   update(dt: number, input: ControlInput): void {
@@ -96,15 +108,21 @@ export class GameEngine {
         if (this.stateTime >= C.GAME_OVER_COOLDOWN_SEC) this.trackHold(dt, input);
         return;
       case 'PAUSED':
-        // Glider tracks the finger so the player can line up before the world resumes.
-        if (this.mode === 'FOLLOW') this.moveGlider(dt, input, false);
-        this.readyProgress =
-          input.steering && !input.pause ? this.readyProgress + dt / C.RESUME_HOLD_SEC : 0;
-        if (this.readyProgress >= 1) this.setState('PLAYING');
-        return;
+        return this.tickPaused(dt, input);
       case 'PLAYING':
         return this.tickPlaying(dt, input);
     }
+  }
+
+  private tickPaused(dt: number, input: ControlInput): void {
+    if (this.pauseReason === 'MENU') return;
+    // Glider tracks the finger so the player can line up before the world resumes.
+    if (this.mode === 'FOLLOW') this.moveGlider(dt, input, false);
+    if (this.pauseReason === 'RESUMING') this.readyProgress += dt / C.RESUME_COUNTDOWN_SEC;
+    else this.readyProgress = input.steering && !input.pause ? this.readyProgress + dt / C.RESUME_HOLD_SEC : 0;
+    if (this.readyProgress < 1) return;
+    if (this.mode === 'FLAP') this.glider.vy = Math.min(0, this.glider.vy); // no plunge on resume
+    this.setState('PLAYING');
   }
 
   private trackHold(dt: number, input: ControlInput): void {
@@ -133,21 +151,16 @@ export class GameEngine {
         g.scored = true;
         this.score++;
       }
-      const top = g.gapY - g.gapH / 2;
-      const bottom = g.gapY + g.gapH / 2;
-      const y = this.glider.y;
-      if (
-        circleIntersectsRect(C.GLIDER_X, y, C.GLIDER_HITBOX, g.x, PLAY_TOP, g.width, top) ||
-        circleIntersectsRect(C.GLIDER_X, y, C.GLIDER_HITBOX, g.x, bottom, g.width, PLAY_BOTTOM - bottom)
-      ) {
-        return this.crash();
-      }
+      if (hitsGate(this.glider.y, g, PLAY_BOTTOM)) return this.crash();
     }
     this.gates = this.gates.filter((g) => g.x + g.width > -10);
   }
 
   private moveGlider(dt: number, input: ControlInput, live: boolean): void {
-    if (this.mode === 'FOLLOW' || !live) {
+    if (input.flap) this.hovering = false;
+    if (this.mode === 'FLAP' && (this.state === 'READY' || this.hovering)) {
+      stepFollow(this.glider, C.FLAP_LAUNCH_Y, dt, this.physics); // hover at the launch altitude
+    } else if (this.mode === 'FOLLOW' || !live) {
       if (this.targetY !== null) stepFollow(this.glider, this.targetY, dt, this.physics);
     } else {
       stepClassic(this.glider, input.flap, dt, { gravity: C.GRAVITY, flapVy: C.FLAP_VY, vMax: this.physics.vMax });
@@ -170,11 +183,7 @@ export class GameEngine {
 
   private spawnGate(): void {
     const gapH = gapForScore(this.score);
-    const lo = C.GATE_MARGIN + gapH / 2;
-    const hi = PLAY_BOTTOM - C.GATE_MARGIN - gapH / 2;
-    const want = lo + this.rng() * (hi - lo);
-    const gapY = Math.max(this.lastGapY - C.GATE_MAX_SHIFT, Math.min(this.lastGapY + C.GATE_MAX_SHIFT, want));
-    this.lastGapY = Math.max(lo, Math.min(hi, gapY));
+    this.lastGapY = nextGapY(this.rng(), this.lastGapY, gapH, PLAY_BOTTOM);
     this.gates.push({ id: this.nextGateId++, x: C.CANVAS_WIDTH + 10, width: C.GATE_WIDTH, gapY: this.lastGapY, gapH, scored: false });
   }
 
@@ -182,7 +191,6 @@ export class GameEngine {
     this.setState('PAUSED');
     this.pauseReason = reason;
   }
-
   private crash(): void {
     this.best = Math.max(this.best, this.score);
     this.setState('GAME_OVER');

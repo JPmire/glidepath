@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Glidepath: an airmail stamp with the paper glider knocked out of the red field. -->
+  <defs>
+    <mask id="perf">
+      <rect width="64" height="64" fill="#fff" />
+      <g fill="#000">
+        <circle cx="2" cy="12" r="3" /><circle cx="2" cy="22" r="3" /><circle cx="2" cy="32" r="3" />
+        <circle cx="2" cy="42" r="3" /><circle cx="2" cy="52" r="3" />
+        <circle cx="62" cy="12" r="3" /><circle cx="62" cy="22" r="3" /><circle cx="62" cy="32" r="3" />
+        <circle cx="62" cy="42" r="3" /><circle cx="62" cy="52" r="3" />
+        <circle cx="12" cy="2" r="3" /><circle cx="22" cy="2" r="3" /><circle cx="32" cy="2" r="3" />
+        <circle cx="42" cy="2" r="3" /><circle cx="52" cy="2" r="3" />
+        <circle cx="12" cy="62" r="3" /><circle cx="22" cy="62" r="3" /><circle cx="32" cy="62" r="3" />
+        <circle cx="42" cy="62" r="3" /><circle cx="52" cy="62" r="3" />
+      </g>
+    </mask>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" fill="#F2EADB" mask="url(#perf)" />
+  <rect x="9" y="9" width="46" height="46" fill="#D8343F" />
+  <!-- pencil glidepath behind the tail -->
+  <path d="M11 47 C17 46 20 40 23 36" fill="none" stroke="#F2EADB" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="1 4.2" />
+  <!-- wing (paper) and keel (blue-screened), split by a red fold line -->
+  <path d="M51 21 L14 15 L26 30 Z" fill="#F2EADB" />
+  <path d="M49.5 23.5 L26 33 L21 43 Z" fill="#F2EADB" />
+  <path d="M49.5 23.5 L26 33 L21 43 Z" fill="#1E3F8F" fill-opacity="0.28" />
+</svg>
