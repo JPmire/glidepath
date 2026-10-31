@@ -1,0 +1,27 @@
+{
+  "name": "glidepath",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Steer a paper airmail glider by pointing at your webcam. Hand-tracked, risograph-printed, with a generative soundtrack.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "setup:assets": "node scripts/setupAssets.mjs",
+    "postinstall": "node scripts/setupAssets.mjs"
+  },
+  "dependencies": {
+    "@fontsource/big-shoulders-stencil-display": "^5.3.0",
+    "@fontsource/courier-prime": "^5.3.0",
+    "@mediapipe/tasks-vision": "^1.2.0"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3",
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5"
+  }
+}
