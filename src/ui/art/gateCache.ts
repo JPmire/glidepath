@@ -32,7 +32,14 @@ export class GateCache {
       e = { canvas: this.render(g, stamp, leg), stamp, leg };
       this.entries.set(g.id, e);
     }
-    ctx.drawImage(e.canvas, g.x - PAD, 0, g.width + PAD * 2, FLOOR);
+    // A drifting gate is rendered once at its base height with `amp` of slack above and below,
+    // then slid with its gap so the walls always end exactly at the collision rect. The street is
+    // overprinted (it shows what is under it), so whatever would sink below the floor is cropped.
+    const amp = g.drift?.amp ?? 0;
+    const y = g.drift ? g.gapY - g.drift.baseY - amp : 0;
+    const h = FLOOR - y;
+    const sh = (e.canvas.height * h) / (FLOOR + amp * 2);
+    ctx.drawImage(e.canvas, 0, 0, e.canvas.width, sh, g.x - PAD, y, g.width + PAD * 2, h);
   }
 
   /** Forget gates that have left the world. */
@@ -46,15 +53,17 @@ export class GateCache {
     const s = this.scale;
     const canvas = document.createElement('canvas');
     canvas.width = Math.ceil((g.width + PAD * 2) * s);
-    canvas.height = Math.ceil(FLOOR * s);
+    const amp = g.drift?.amp ?? 0;
+    const baseY = g.drift?.baseY ?? g.gapY;
+    canvas.height = Math.ceil((FLOOR + amp * 2) * s);
     const c = canvas.getContext('2d')!;
     c.scale(s, s);
-    c.translate(PAD, 0);
-    const top = g.gapY - g.gapH / 2;
-    const bottom = g.gapY + g.gapH / 2;
+    c.translate(PAD, amp);
+    const top = baseY - g.gapH / 2;
+    const bottom = baseY + g.gapH / 2;
     const art = legArt(leg);
-    art.top(c, 0, 0, g.width, top, g.id * 31 + 7);
-    art.bottom(c, 0, bottom, g.width, FLOOR - bottom, g.id * 31 + 107);
+    art.top(c, 0, -amp, g.width, top + amp, g.id * 31 + 7);
+    art.bottom(c, 0, bottom, g.width, FLOOR + amp - bottom, g.id * 31 + 107);
     if (stamp !== null) {
       const cy = bottom + Math.min(64, (FLOOR - bottom) / 2 + 6);
       postmark(c, g.width / 2, cy, 27, {

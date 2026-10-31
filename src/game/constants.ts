@@ -15,16 +15,10 @@ export const GRAVITY = 1400; // px/s², classic flap mode
 export const FLAP_VY = -460; // px/s
 export const FLAP_LAUNCH_Y = 300; // classic mode starts every run airborne here, never on the street
 
-export const GATE_SPEED = 280; // px/s
-export const GATE_SPEED_STEP = 8; // per 5 points
-export const GATE_SPEED_MAX = 480;
+// Speed, gap size and gate spacing come from the chosen route: see difficulty.ts.
 export const GATE_WIDTH = 78;
-export const GATE_GAP = 165;
-export const GATE_GAP_MIN = 130;
-export const GATE_GAP_STEP = 5; // shrink per 5 points
-export const GATE_SPAWN_MS = 1450;
+export const GATE_GAP = 165; // the Airmail route's opening gap (style frames draw at this size)
 export const GATE_MARGIN = 60; // min distance from gap edge to ceiling/ground
-export const GATE_MAX_SHIFT = 260; // max gap-centre change between consecutive gates
 
 export const READY_HOLD_SEC = 0.8; // show a steering hand this long to launch
 export const RESUME_HOLD_SEC = 0.6; // after a pause, steer this long to resume

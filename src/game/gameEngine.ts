@@ -1,7 +1,8 @@
 import * as C from './constants';
-import { gapForScore, hitsGate, nextGapY, speedForScore } from './gameRules';
+import { difficultyFor, rampProgress, rulesFor, type Difficulty, type GateRules } from './difficulty';
+import { hitsGate, makeGate, stepDrift, type Gate } from './gameRules';
 import { stepClassic, stepFollow, type GliderBody } from './springDamperPhysics';
-export { circleIntersectsRect, gapForScore, speedForScore } from './gameRules';
+export { circleIntersectsRect, type Gate } from './gameRules';
 
 export type GameState = 'CALIBRATING' | 'READY' | 'PLAYING' | 'PAUSED' | 'GAME_OVER';
 /** PALM / NO_HAND resume by gesture; MENU waits for the pause menu; RESUMING counts down to play. */
@@ -20,16 +21,6 @@ export interface ControlInput {
   handPresent: boolean;
 }
 
-export interface Gate {
-  /** Unique for the session (never reset), so art and postmarks can be cached per gate. */
-  id: number;
-  x: number;
-  width: number;
-  gapY: number;
-  gapH: number;
-  scored: boolean;
-}
-
 const NO_HAND_GRACE_SEC = 0.5;
 const PLAY_BOTTOM = C.CANVAS_HEIGHT - C.GROUND_HEIGHT;
 
@@ -45,6 +36,8 @@ export class GameEngine {
   /** Latest pointed altitude, for the laser reticle. */
   targetY: number | null = null;
   physics = { omegaN: C.SPRING_OMEGA_N, zeta: C.SPRING_ZETA, vMax: C.GLIDER_MAX_VY };
+  /** The chosen route; set it between runs (it shapes every gate from the next launch on). */
+  difficulty: Difficulty = difficultyFor(undefined);
 
   private spawnTimer = 0;
   private stateTime = 0;
@@ -55,8 +48,18 @@ export class GameEngine {
 
   constructor(private readonly rng: () => number = Math.random) {}
 
+  /** Speed, gap and gate pattern at the current score. */
+  get rules(): GateRules {
+    return rulesFor(this.difficulty, this.score);
+  }
+
   get speed(): number {
-    return speedForScore(this.score);
+    return this.rules.speed;
+  }
+
+  /** How far into the route's ramp this run is, 0–1. */
+  get intensity(): number {
+    return rampProgress(this.difficulty, this.score);
   }
 
   get canRestart(): boolean {
@@ -74,7 +77,7 @@ export class GameEngine {
   launch(): void {
     this.gates = [];
     this.score = 0;
-    this.spawnTimer = C.GATE_SPAWN_MS / 1000; // first gate spawns on the next tick
+    this.spawnTimer = Infinity; // first gate spawns on the next tick
     this.noHandTime = 0;
     this.glider.vy = 0;
     // A flap run ends on the street; the next one starts mid-air and hovers until the first flap.
@@ -138,15 +141,19 @@ export class GameEngine {
     this.moveGlider(dt, input, true);
     if (this.state !== 'PLAYING') return;
 
+    const rules = this.rules;
     this.spawnTimer += dt;
-    if (this.spawnTimer >= C.GATE_SPAWN_MS / 1000) {
+    if (this.spawnTimer >= rules.spawnSec) {
       this.spawnTimer = 0;
-      this.spawnGate();
+      const gate = makeGate(this.nextGateId++, this.lastGapY, rules, PLAY_BOTTOM, this.rng);
+      this.lastGapY = gate.drift?.baseY ?? gate.gapY;
+      this.gates.push(gate);
     }
 
-    const dx = this.speed * dt;
+    const dx = rules.speed * dt;
     for (const g of this.gates) {
       g.x -= dx;
+      stepDrift(g, dt);
       if (!g.scored && g.x + g.width < C.GLIDER_X - C.GLIDER_HITBOX) {
         g.scored = true;
         this.score++;
@@ -179,12 +186,6 @@ export class GameEngine {
 
   private clampTarget(y: number): number {
     return Math.max(C.GLIDER_RADIUS, Math.min(PLAY_BOTTOM - C.GLIDER_RADIUS, y));
-  }
-
-  private spawnGate(): void {
-    const gapH = gapForScore(this.score);
-    this.lastGapY = nextGapY(this.rng(), this.lastGapY, gapH, PLAY_BOTTOM);
-    this.gates.push({ id: this.nextGateId++, x: C.CANVAS_WIDTH + 10, width: C.GATE_WIDTH, gapY: this.lastGapY, gapH, scored: false });
   }
 
   private pause(reason: PauseReason): void {

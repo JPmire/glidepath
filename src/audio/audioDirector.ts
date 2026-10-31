@@ -1,5 +1,5 @@
 import type { GameEngine, GameState } from '../game/gameEngine';
-import { GATE_SPEED, GATE_SPEED_MAX } from '../game/constants';
+import { SPEED_RANGE } from '../game/difficulty';
 import { legForScore } from '../game/gameRules';
 import { Music, type Mood } from './music';
 import { Sfx } from './sfx';
@@ -96,7 +96,7 @@ export class AudioDirector {
     this.prevLeg = leg;
 
     const playing = s === 'PLAYING';
-    const air = playing ? (game.speed - GATE_SPEED) / (GATE_SPEED_MAX - GATE_SPEED) : 0;
+    const air = playing ? (game.speed - SPEED_RANGE.from) / (SPEED_RANGE.to - SPEED_RANGE.from) : 0;
     const flutter = Math.min(1, Math.abs(game.glider.vy) / game.physics.vMax);
     this.sfx.setFlight(air, playing ? 0.25 + flutter * 0.75 : 0, playing || s === 'READY');
   }

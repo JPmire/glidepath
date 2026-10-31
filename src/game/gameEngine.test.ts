@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { circleIntersectsRect, GameEngine, gapForScore, speedForScore, type ControlInput } from './gameEngine';
+import { DIFFICULTIES } from './difficulty';
+import { circleIntersectsRect, GameEngine, type ControlInput } from './gameEngine';
 import { legForScore } from './gameRules';
-import { FLAP_LAUNCH_Y, GATE_GAP, GATE_GAP_MIN, GATE_SPEED, GATE_SPEED_MAX, GLIDER_X } from './constants';
+import { CANVAS_HEIGHT, FLAP_LAUNCH_Y, GATE_MARGIN, GLIDER_X, GROUND_HEIGHT } from './constants';
 
 const idle: ControlInput = { targetY: 360, steering: true, pause: false, flap: false, handPresent: true };
 const dt = 1 / 120;
@@ -28,16 +29,29 @@ describe('circleIntersectsRect', () => {
   });
 });
 
-describe('difficulty curve', () => {
-  it('speeds up 8 px/s every 5 points, capped at 480', () => {
-    expect(speedForScore(0)).toBe(GATE_SPEED);
-    expect(speedForScore(5)).toBe(GATE_SPEED + 8);
-    expect(speedForScore(14)).toBe(GATE_SPEED + 16);
-    expect(speedForScore(10_000)).toBe(GATE_SPEED_MAX);
+describe('routes', () => {
+  it('the engine flies the chosen route', () => {
+    const g = playing();
+    g.difficulty = DIFFICULTIES.STORM;
+    expect(g.speed).toBe(DIFFICULTIES.STORM.speed.from);
+    g.score = 10_000;
+    expect(g.speed).toBe(DIFFICULTIES.STORM.speed.to);
+    expect(g.intensity).toBe(1);
   });
-  it('narrows the gap down to the minimum', () => {
-    expect(gapForScore(0)).toBe(GATE_GAP);
-    expect(gapForScore(10_000)).toBe(GATE_GAP_MIN);
+
+  it('Storm gates drift and their gaps stay inside the street margins', () => {
+    const g = playing();
+    g.difficulty = DIFFICULTIES.STORM;
+    let drifting = 0;
+    for (let i = 0; i < 1200; i++) {
+      g.update(dt, { ...idle, targetY: g.gates[0]?.gapY ?? 360 });
+      for (const gate of g.gates) {
+        if (gate.drift) drifting++;
+        expect(gate.gapY - gate.gapH / 2).toBeGreaterThanOrEqual(GATE_MARGIN - 0.001);
+        expect(gate.gapY + gate.gapH / 2).toBeLessThanOrEqual(CANVAS_HEIGHT - GROUND_HEIGHT - GATE_MARGIN + 0.001);
+      }
+    }
+    expect(drifting).toBeGreaterThan(0);
   });
 });
 
