@@ -1,0 +1,441 @@
+/* Airmail: risograph inks on paper. Same tokens as src/ui/art/palette.ts. */
+:root {
+  --paper: #f2eadb;
+  --red: #d8343f;
+  --blue: #1e3f8f;
+  --ochre: #e3a53a;
+  --graphite: #34322e;
+  --fog: #9db4c8;
+  --kraft: color-mix(in srgb, var(--ochre) 42%, var(--paper));
+  --desk: #2a2824;
+  --shadow: rgba(16, 14, 12, 0.5);
+  --display: 'Big Shoulders Stencil Display', Impact, sans-serif;
+  --type: 'Courier Prime', 'Courier New', monospace;
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .38 0 0 0 0 .28 0 0 0 .22 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+* {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--desk);
+  color: var(--graphite);
+  font-family: var(--type);
+  overflow: hidden;
+}
+
+#stage {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  display: grid;
+  place-items: center;
+}
+
+#game {
+  display: block;
+  box-shadow: 12px 14px 0 var(--shadow);
+  cursor: crosshair;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: 3px;
+}
+
+/* ---- Intro: a typed letter in an airmail envelope border ---- */
+.letter {
+  position: absolute;
+  width: min(660px, calc(100vw - 32px));
+  max-height: calc(100vh - 40px);
+  overflow: auto;
+  padding: 34px 44px 30px;
+  background: var(--grain), var(--paper);
+  border: 14px solid transparent;
+  border-image: repeating-linear-gradient(-45deg, var(--red) 0 10px, var(--paper) 10px 18px, var(--blue) 18px 28px, var(--paper) 28px 36px) 14;
+  box-shadow: 12px 14px 0 var(--shadow);
+  transform: rotate(-0.6deg);
+}
+
+.corner-stamp {
+  position: absolute;
+  top: 18px;
+  right: 22px;
+  width: 74px;
+  height: 88px;
+  display: grid;
+  place-items: center;
+  background: var(--red);
+  border: 5px solid var(--paper);
+  outline: 2px dotted var(--graphite);
+  outline-offset: -1px;
+  transform: rotate(4deg);
+}
+
+.corner-stamp span {
+  font: 800 19px/1 var(--display);
+  letter-spacing: 0.08em;
+  color: var(--paper);
+  text-align: center;
+}
+
+.masthead {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 0 96px 12px 0;
+}
+
+.manicule {
+  width: 92px;
+  flex: none;
+  overflow: visible;
+}
+
+.manicule .hand {
+  fill: var(--paper);
+}
+
+.manicule .cuff {
+  fill: var(--blue);
+}
+
+.manicule path {
+  stroke: var(--graphite);
+  stroke-width: 2.6;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.manicule .detail {
+  fill: none;
+  stroke-width: 1.8;
+}
+
+h1 {
+  margin: 0;
+  font: 800 86px/0.9 var(--display);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--blue);
+}
+
+.lede {
+  margin: 0 0 22px;
+  font-size: 17px;
+  line-height: 1.55;
+}
+
+h2 {
+  margin: 0 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1.5px dashed var(--graphite);
+  font: 700 13px var(--type);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--red);
+}
+
+.checklist {
+  margin: 0 0 26px;
+  padding: 0;
+  list-style: none;
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+
+.checklist li {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 8px;
+}
+
+.checklist li + li {
+  margin-top: 10px;
+}
+
+.checklist p {
+  margin: 0;
+}
+
+.checklist .box {
+  width: 14px;
+  height: 14px;
+  margin-top: 4px;
+  border: 1.5px solid var(--graphite);
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px 26px;
+}
+
+.airmail-label {
+  padding: 12px 30px 10px;
+  font: 800 28px/1 var(--display);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--paper);
+  background: var(--red);
+  border: 0;
+  box-shadow: inset 0 0 0 4px var(--red), inset 0 0 0 6px var(--paper), 6px 7px 0 var(--graphite);
+  transform: rotate(-1.5deg);
+  transition: transform 120ms ease-out, box-shadow 120ms ease-out;
+}
+
+.airmail-label:hover {
+  transform: rotate(0deg) translateY(-1px);
+}
+
+.airmail-label:active {
+  transform: translate(3px, 4px);
+  box-shadow: inset 0 0 0 4px var(--red), inset 0 0 0 6px var(--paper), 2px 2px 0 var(--graphite);
+}
+
+.airmail-label:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.typed-link {
+  padding: 4px 0;
+  font-size: 16px;
+  background: none;
+  border: 0;
+  text-decoration: underline dashed 1.5px;
+  text-underline-offset: 5px;
+}
+
+.typed-link:hover {
+  color: var(--blue);
+}
+
+.error {
+  margin: 18px 0 0;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--red);
+}
+
+/* ---- HUD: the stamp-shaped webcam preview and its rubber-stamp status ---- */
+#hud {
+  position: absolute;
+  left: 22px;
+  bottom: 22px;
+}
+
+#pip {
+  display: block;
+  width: 264px;
+  height: 178px;
+  filter: drop-shadow(6px 8px 0 var(--shadow));
+  transform: rotate(-1.5deg);
+}
+
+.rubber-stamp {
+  position: absolute;
+  right: -10px;
+  bottom: 10px;
+  padding: 3px 10px 1px;
+  font: 800 20px/1 var(--display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--blue);
+  border: 3px double currentColor;
+  transform: rotate(-6deg);
+  mix-blend-mode: multiply;
+  opacity: 0.92;
+}
+
+#pip[hidden] + .rubber-stamp {
+  position: static;
+  display: inline-block;
+  background: var(--paper);
+  mix-blend-mode: normal;
+}
+
+.rubber-stamp[data-state='paused'],
+.rubber-stamp[data-state='open'],
+.rubber-stamp[data-state='no'] {
+  color: var(--red);
+}
+
+.rubber-stamp[data-state='mouse'] {
+  color: var(--graphite);
+}
+
+/* ---- Tuning: a kraft luggage tag ---- */
+.tag {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 304px;
+  padding: 12px 18px 14px 40px;
+  background: var(--grain), var(--kraft);
+  font-size: 12.5px;
+  clip-path: polygon(22px 0, 100% 0, 100% 100%, 22px 100%, 0 calc(100% - 22px), 0 22px);
+  transform: rotate(1.2deg);
+}
+
+.tag::before {
+  content: '';
+  position: absolute;
+  left: 11px;
+  top: 17px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--desk);
+  box-shadow: 0 0 0 3px var(--paper);
+}
+
+.tag summary {
+  cursor: pointer;
+  list-style: none;
+  font: 800 22px/1 var(--display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--blue);
+}
+
+.tag summary::-webkit-details-marker {
+  display: none;
+}
+
+.tag summary::after {
+  content: ' +';
+  font-family: var(--type);
+  color: var(--graphite);
+}
+
+.tag[open] summary::after {
+  content: ' −';
+}
+
+#settings-body {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px;
+}
+
+.row output {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.row input {
+  grid-column: 1 / -1;
+}
+
+input[type='range'] {
+  appearance: none;
+  height: 20px;
+  margin: 0;
+  background: transparent;
+}
+
+input[type='range']::-webkit-slider-runnable-track {
+  height: 2px;
+  background: var(--graphite);
+}
+
+input[type='range']::-moz-range-track {
+  height: 2px;
+  background: var(--graphite);
+}
+
+input[type='range']::-webkit-slider-thumb {
+  appearance: none;
+  width: 14px;
+  height: 18px;
+  margin-top: -8px;
+  background: var(--red);
+  border: 2px solid var(--paper);
+  outline: 1.5px solid var(--graphite);
+}
+
+input[type='range']::-moz-range-thumb {
+  width: 12px;
+  height: 16px;
+  border-radius: 0;
+  background: var(--red);
+  border: 2px solid var(--paper);
+  outline: 1.5px solid var(--graphite);
+}
+
+.segmented {
+  display: flex;
+  gap: 6px;
+}
+
+.segmented button,
+.actions button {
+  flex: 1;
+  padding: 6px 8px;
+  font-size: 12px;
+  background: var(--paper);
+  border: 1.5px solid var(--graphite);
+}
+
+.segmented button[aria-checked='true'] {
+  background: var(--blue);
+  color: var(--paper);
+  border-color: var(--blue);
+}
+
+.check {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.check input {
+  accent-color: var(--red);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.actions button {
+  flex: none;
+  background: transparent;
+  border-style: dashed;
+}
+
+.actions button:hover,
+.segmented button[aria-checked='false']:hover {
+  background: var(--paper);
+  color: var(--blue);
+}
+
+.stats {
+  margin: 12px 0 0;
+  font-size: 10.5px;
+  line-height: 1.5;
+  opacity: 0.8;
+}

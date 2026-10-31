@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Glidepath</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <main id="stage">
+      <canvas id="game" aria-label="Glidepath game canvas"></canvas>
+
+      <section id="intro" class="letter" aria-labelledby="intro-title">
+        <div class="corner-stamp" aria-hidden="true"><span>PAR<br />AVION</span></div>
+        <header class="masthead">
+          <svg class="manicule" viewBox="0 0 100 50" aria-hidden="true">
+            <path class="cuff" d="M3 6 L15 9 L15 44 L3 47 C1 34 1 19 3 6 Z" />
+            <path class="hand" d="M15 11 C24 6 34 5 45 7 L91 7 C99 7 99 18 91 18 L56 18 C64 18 66 27 57 28 C65 29 65 37 56 37 C63 38 62 46 53 46 L41 46 C30 47 22 45 15 42 Z" />
+            <path class="detail" d="M22 14 C32 15 42 20 56 18 M85 9 C83 11 83 15 85 17 M9 9 C8 22 8 32 9 44 M48 28 L57 28 M47 37 L56 37" />
+          </svg>
+          <h1 id="intro-title">Glidepath</h1>
+        </header>
+        <p class="lede">
+          You are a letter, folded into a glider. Point your index finger at the screen and it flies
+          where you point, over the rooftops and between the chimneys.
+        </p>
+
+        <h2>Before posting</h2>
+        <ul class="checklist">
+          <li>
+            <span class="box" aria-hidden="true"></span>
+            <p><strong>Turn off Reactions.</strong> Once the camera is on, open the green camera menu in the
+            menu bar and switch <em>Reactions</em> off, or a thumbs-up sets off fireworks and confuses tracking.</p>
+          </li>
+          <li>
+            <span class="box" aria-hidden="true"></span>
+            <p><strong>Turn off Center Stage, Portrait and Studio Light</strong> in the same menu. Auto-framing breaks calibration.</p>
+          </li>
+          <li>
+            <span class="box" aria-hidden="true"></span>
+            <p><strong>Sit 30–50 cm from the camera</strong> in good light, and keep your hand large in the frame.</p>
+          </li>
+          <li>
+            <span class="box" aria-hidden="true"></span>
+            <p><strong>Show an open palm to hold</strong> the letter any time, and point again to resume.</p>
+          </li>
+        </ul>
+
+        <div class="buttons">
+          <button id="btn-camera" class="airmail-label" type="button">Enable camera</button>
+          <button id="btn-mouse" class="typed-link" type="button">or play with the mouse</button>
+        </div>
+        <p id="intro-error" class="error" role="alert" hidden></p>
+      </section>
+
+      <aside id="hud" hidden>
+        <canvas id="pip" width="264" height="178" aria-label="Mirrored webcam preview with hand skeleton"></canvas>
+        <span id="pill" class="rubber-stamp" role="status">CAMERA OFF</span>
+      </aside>
+
+      <details id="settings" class="tag" hidden>
+        <summary>Tuning</summary>
+        <div id="settings-body"></div>
+        <p id="stats" class="stats"></p>
+      </details>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
